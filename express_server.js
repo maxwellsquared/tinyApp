@@ -34,9 +34,19 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
+
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  if (req.body.longURL.substring(0, 3) !== "http") {
+    req.body.longURL = "http://" + req.body.longURL;
+  }
+  urlDatabase[generateRandomString()] = req.body.longURL;
+  console.log(req.body);
+  res.redirect("urls")
 });
 
 
@@ -45,7 +55,7 @@ app.post("/urls", (req, res) => {
 // });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`TonyApplistening on port ${PORT}!`);
 });
 
 function generateRandomString() {
