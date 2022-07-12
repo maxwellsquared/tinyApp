@@ -4,7 +4,6 @@ const PORT = 8080; // default port 8080
 
 app.use(express.urlencoded({ extended: true }));
 
-
 app.set('view engine', 'ejs');
 
 const urlDatabase = {
@@ -27,7 +26,7 @@ app.get("/", (req, res) => {
 
 app.get("/about", (req, res) => {
   res.render("pages/about");
-});
+}); 
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
@@ -49,10 +48,12 @@ app.post("/urls", (req, res) => {
   res.redirect("urls")
 });
 
-
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
+app.post("/urls/:id/delete/", (req, res) => {
+  console.log(req.params);
+  console.log(`TRYIN TO DELETE OVER HERE`); // Log the POST request body to the console
+  delete urlDatabase[req.params.id] // <-- Use this
+  res.redirect("/urls/")
+});
 
 app.listen(PORT, () => {
   console.log(`TonyApplistening on port ${PORT}!`);
