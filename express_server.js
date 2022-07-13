@@ -40,10 +40,7 @@ app.get("/u/:id", (req, res) => {
 
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  if (req.body.longURL.substring(0, 3) !== "http") {
-    req.body.longURL = "http://" + req.body.longURL;
-  }
-  urlDatabase[generateRandomString()] = req.body.longURL;
+  urlDatabase[generateRandomString()] = addHTTP(req.body.longURL);
   console.log(req.body);
   res.redirect("urls")
 });
@@ -54,14 +51,8 @@ app.post("/urls/:id/delete/", (req, res) => {
 });
 
 app.post("/urls/:id/update/", (req, res) => {
-  console.log("------");
-  console.log("Trying to update over here!");
-  console.log("Request params", req.params);
-  console.log("Request body", req.body);
-  urlDatabase[req.params.id] = req.body.longURL; // Running into trouble because I can't get the longURL back!
+  urlDatabase[req.params.id] = addHTTP(req.body.longURL); // Running into trouble because I can't get the longURL back!
   res.redirect("/urls/")
-  console.log(urlDatabase);
-  console.log(req.params.id);
 });
 
 app.listen(PORT, () => {
@@ -80,4 +71,11 @@ function generateRandomString() {
     randString += randChar
   }
   return randString
+}
+
+const addHTTP = function(input) {
+  if (input.substring(0, 3) !== "http") {
+    input = "http://" + input;
+  }
+  return input;
 }
