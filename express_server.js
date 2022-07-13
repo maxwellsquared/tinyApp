@@ -49,10 +49,19 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete/", (req, res) => {
-  console.log(req.params);
-  console.log(`TRYIN TO DELETE OVER HERE`); // Log the POST request body to the console
-  delete urlDatabase[req.params.id] // <-- Use this
+  delete urlDatabase[req.params.id] //
   res.redirect("/urls/")
+});
+
+app.post("/urls/:id/update/", (req, res) => {
+  console.log("------");
+  console.log("Trying to update over here!");
+  console.log("Request params", req.params);
+  console.log("Request body", req.body);
+  urlDatabase[req.params.id] = req.body.longURL; // Running into trouble because I can't get the longURL back!
+  res.redirect("/urls/")
+  console.log(urlDatabase);
+  console.log(req.params.id);
 });
 
 app.listen(PORT, () => {
