@@ -1,7 +1,9 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieParser = require('cookie-parser')
 
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
@@ -12,24 +14,22 @@ const urlDatabase = {
 };
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render('urls_index', templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars= { username: req.cookies["username"] };
+  res.render("urls_new", templateVars);
 });
 
 app.get("/", (req, res) => {
-  res.render('pages/index');
+  const templateVars = { username: req.cookies["username"] };
+  res.render('index', templateVars);
 });
 
-app.get("/about", (req, res) => {
-  res.render("pages/about");
-}); 
-
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"]};
   res.render("urls_show", templateVars);
 });
 
@@ -52,6 +52,25 @@ app.post("/urls/:id/delete/", (req, res) => {
 
 app.post("/urls/:id/update/", (req, res) => {
   urlDatabase[req.params.id] = addHTTP(req.body.longURL); // Running into trouble because I can't get the longURL back!
+  res.redirect("/urls/")
+});
+
+app.post("/login/", (req, res) => {
+  console.log("Hit login!")
+  console.log(req.body.username);
+  console.log("Cookies:", req.cookies);
+  console.log("Params:", req.params);
+  console.log("Body:", req.body);
+  res.cookie("username", req.body.username);
+  res.redirect("/urls/")
+});
+
+app.post("/logout/", (req, res) => {
+  console.log("Logging out!");
+  console.log("Cookies:", req.cookies);
+  console.log("Params:", req.params);
+  console.log("Body:", req.body);
+  res.clearCookie("username");
   res.redirect("/urls/")
 });
 
