@@ -86,13 +86,19 @@ app.post("/urls/:id/delete/", (req, res) => {
   res.redirect("/urls/")
 });
 
-app.post("/user/:id/create", (req, res) => {
+app.post("/register", (req, res) => {
+  console.log("Registering new user...")
+  if (req.body.email === "" || req.body.password === "" ) {
+    res.status(400).send('Uh-oh! Empty username or password!');
+  }
+  if (isUserEmailActive(req.body.email)) {
+    res.status(400).send('User with that email already exists!');
+  }
   let newID = generateRandomString(8)
   console.log(req.body); // Log the POST request body to the console
   users[newID] = { id: newID, email: req.body.email, password: req.body.password};
   console.log(users);
   res.cookie("user_id", newID);
-
   res.redirect("/urls/")
 });
 
@@ -106,7 +112,6 @@ app.post("/logout/", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/urls/")
 });
-
 // LISTEN
 
 app.listen(PORT, () => {
@@ -136,4 +141,16 @@ const addHTTP = function(input) {
     input = "http://" + input;
   }
   return input;
+}
+
+const isUserEmailActive = function(emailToCheck) {
+  console.log("Checking", emailToCheck);
+  for (let user in users) {
+    console.log(`Checking ${user} with address ${users[user].email}...`)
+    if (users[user].email === emailToCheck) {
+      console.log(`Looks like ${user} already exists.`)
+      return true;
+    }
+  }
+  return false;
 }
