@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require('cookie-parser') // replace this!
+const bcrypt = require("bcryptjs")
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -40,6 +41,7 @@ const users = {
     password: "1234"
   }
 };
+
 //
 // GET
 //
@@ -136,7 +138,9 @@ app.post("/urls/:id/delete", (req, res) => { // BREA(D) - delete
 // - USER - 
 
 app.post("/register", (req, res) => {
-  console.log("Registering new user...")
+  console.log("Registering new user...");
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+  console.log("Password hashed.");
   if (req.body.email === "" || req.body.password === "" ) {
     return res.status(400).send('Uh-oh! Empty username or password!'); 
   }
@@ -145,7 +149,7 @@ app.post("/register", (req, res) => {
   }
   let newID = generateRandomString(8)
   console.log(req.body); 
-  users[newID] = { id: newID, email: req.body.email, password: req.body.password};
+  users[newID] = { id: newID, email: req.body.email, password: hashedPassword};
   console.log(users);
   res.cookie("user_id", newID);
   res.redirect("/urls/")
@@ -159,10 +163,11 @@ app.post("/login/", (req, res) => {
   if (!currentUser) {
     return res.status(403).send('Oopsie woopsie! No user with that email address found.');
   }
-  if (users[currentUser] && users[currentUser].password !== req.body.password) {
-    return res.status(403).send('Incorrect password'); 
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+  if (!bcrypt.compareSync(req.body.password, hashedPassword)) {
+    return res.status(403).send('Incorrect password');
   }
-  console.log(`Logged in with email ${users[currentUser].email} and password ${users[currentUser].password}`);
+  console.log(`Logged in with email ${users[currentUser].email}`);
   res.cookie("user_id", users[currentUser].id);
   res.redirect("/urls/")
 });
