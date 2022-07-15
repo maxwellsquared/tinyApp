@@ -67,8 +67,10 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]] };
-  res.render('index', templateVars);
+  if (!users[req.session["user_id"]]) {
+    return res.redirect('/login');
+  }
+  res.redirect('/urls');
 });
 
 app.get("/urls/:id", (req, res) => { // url B(R)EAD - read
