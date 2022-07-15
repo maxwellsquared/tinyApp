@@ -2,6 +2,19 @@
 
 TonyApp is a full stack web application built with Node and Express which allows users to shorten long URLs.
 
+## Final Product
+
+!["Screenshot of welcome page"](https://github.com/maxwellsquared/tinyApp/blob/main/docs/index.png?raw=true)
+!["Remember to log in!"](https://github.com/maxwellsquared/tinyApp/blob/main/docs/login.png?raw=true)
+
+## Dependencies
+
+- Node.js
+- Express
+- EJS
+- bcryptjs
+- cookie-session
+
 ## A Word from Tony
 
 Hello! It's me, noted song stylist Tony Bennett. The kids know me for my duets with Lady Gaga, but my real passion is shortening URLs to make it easy to tell your favorite website, "Take Me Back Again." For that end, I've enlisted my close personal friend Max to code up a **full stack web application built with Node and Express** that will let me keep track of my shortened URLs.
