@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser') // replace this!
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -24,14 +24,19 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk",
   },
+  testUser: {
+    id: "testUser",
+    email: "a@a.com",
+    password: "1234"
+  }
 };
+
 
 //
 // GET
 //
 
-
-app.get("/urls", (req, res) => {
+app.get("/urls", (req, res) => { // url (B)READ - browse
   const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render('urls_index', templateVars);
 });
@@ -46,7 +51,7 @@ app.get("/", (req, res) => {
   res.render('index', templateVars);
 });
 
-app.get("/urls/:id", (req, res) => {
+app.get("/urls/:id", (req, res) => { // url B(R)EAD - read
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]]};
   res.render("urls_show", templateVars);
 });
@@ -56,43 +61,46 @@ app.get("/register", (req, res) => {
   res.render('register', templateVars);
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render('login', templateVars);
+});
+
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
-
 //
 // POST
 //
 
-app.post("/urls", (req, res) => {
+// - URLs - 
+
+app.post("/urls", (req, res) => {  // url BRE(A)D - add
+  urlDatabase[generateRandomString(6)] = addHTTP(req.body.longURL);
   res.redirect("urls")
 });
 
-app.post("/urls/:id/create/", (req, res) => {
-  console.log("Created", req.body)
-  urlDatabase[generateRandomString(6)] = addHTTP(req.body.longURL);
-  res.redirect("/urls/")
-});
-
-app.post("/urls/:id/update/", (req, res) => {
+app.post("/urls/:id/", (req, res) => { // BR(E)AD - edit
   console.log("Updated it!")
   urlDatabase[req.params.id] = addHTTP(req.body.longURL);
   res.redirect("/urls/")
 });
 
-app.post("/urls/:id/delete/", (req, res) => {
+app.post("/urls/:id/delete", (req, res) => { // BREA(D) - delete
   delete urlDatabase[req.params.id] //
   res.redirect("/urls/")
 });
 
+// - USER - 
+
 app.post("/register", (req, res) => {
   console.log("Registering new user...")
   if (req.body.email === "" || req.body.password === "" ) {
-    res.status(400).send('Uh-oh! Empty username or password!');
+    return res.status(400).send('Uh-oh! Empty username or password!'); // make sure this is a return or you get a headers error
   }
-  if (isUserEmailActive(req.body.email)) {
-    res.status(400).send('User with that email already exists!');
+  if (getUserByEmail(req.body.email)) {
+    return res.status(400).send('User with that email already exists!'); // as above
   }
   let newID = generateRandomString(8)
   console.log(req.body); // Log the POST request body to the console
@@ -103,7 +111,21 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login/", (req, res) => {
-  res.cookie("username", req.body.username);
+  console.log("-----");
+  console.log("--LOGGING IN--");
+  console.log("req.body", req.body)
+  if (req.body.email === "" || req.body.password === "" ) {
+    return res.status(403).send('Uh-oh! Empty username or password!'); // make sure this is a return or you get a headers error
+  }
+  currentUser = getUserByEmail(req.body.email);
+  if (!currentUser) {
+    return res.status(403).send('Oopsie woopsie! No user with that email address found.');
+  }
+  if (users[currentUser] && users[currentUser].password !== req.body.password) {
+    return res.status(403).send('Incorrect password'); // make sure to change later
+  }
+  console.log(`Logged in with email ${users[currentUser].email} and password ${users[currentUser].password}`);
+  res.cookie("user_id", users[currentUser].id);
   res.redirect("/urls/")
 });
 
@@ -112,6 +134,7 @@ app.post("/logout/", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/urls/")
 });
+
 // LISTEN
 
 app.listen(PORT, () => {
@@ -143,13 +166,13 @@ const addHTTP = function(input) {
   return input;
 }
 
-const isUserEmailActive = function(emailToCheck) {
+const getUserByEmail = function(emailToCheck) {
   console.log("Checking", emailToCheck);
   for (let user in users) {
     console.log(`Checking ${user} with address ${users[user].email}...`)
     if (users[user].email === emailToCheck) {
-      console.log(`Looks like ${user} already exists.`)
-      return true;
+      console.log(`Found user ${user} with email ${users[user].email}`)
+      return user;
     }
   }
   return false;
