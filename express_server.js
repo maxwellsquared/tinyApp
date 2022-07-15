@@ -181,5 +181,5 @@ app.post("/logout/", (req, res) => {
 // LISTEN
 
 app.listen(PORT, () => {
-  console.log(`TonyApplistening on port ${PORT}!`);
+  console.log(`TonyApp listening on port ${PORT}!`);
 });
