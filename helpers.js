@@ -1,4 +1,4 @@
-// Create a random string of letters and numbers. 
+// Create a random string of letters and numbers.
 const generateRandomString = function(strLength) {
   let myChars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let randString = "";
@@ -9,19 +9,18 @@ const generateRandomString = function(strLength) {
     if (Math.random() > 0.5) {
       randChar = randChar.toUpperCase();
     }
-    randString += randChar
+    randString += randChar;
   }
-  return randString
-}
+  return randString;
+};
 
 const addHTTP = function(input) {
   if (input === undefined) return input;
-  
   if (input.substring(0, 3) !== "http") {
     input = "http://" + input;
   }
   return input;
-}
+};
 
 const getUserByEmail = function(emailToCheck, database) {
   console.log("Checking", emailToCheck);
@@ -31,16 +30,16 @@ const getUserByEmail = function(emailToCheck, database) {
     }
   }
   return undefined;
-}
+};
 
 const urlsForUser = function(id, database) {
-  toReturn = {};
+  let toReturn = {};
   for (let urlID in database) {
     if (database[urlID].userID === id) {
       toReturn[urlID] = database[urlID];
     }
   }
   return toReturn;
-}
+};
 
-module.exports = { generateRandomString, addHTTP, getUserByEmail, urlsForUser }
+module.exports = { generateRandomString, addHTTP, getUserByEmail, urlsForUser };

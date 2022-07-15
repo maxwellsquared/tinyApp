@@ -8,13 +8,13 @@ const { generateRandomString, addHTTP, getUserByEmail, urlsForUser } = require("
 
 app.use(cookieSession({
   name: 'session',
-  keys: [ 
+  keys: [
     '8fxgUvwLyOpNkBp2r06Y',
     '002xAVr9y5zA69O8j5uK',
     'xZP2ZipXElDT3ckM1NAN',
     'i4rUcL1Ara7e515IcAB0',
     'Z21OYq6pn0o2A74d3I8M'
-    ],
+  ],
 
   // Cookie Options
   maxAge: 90 * 24 * 60 * 60 * 1000 // Set a cookie to live for 90 days
@@ -63,7 +63,7 @@ const users = {
 
 app.get("/urls", (req, res) => { // url (B)READ - browse
   if (!users[req.session["user_id"]]) {
-    return res.status(403).send('No URLs for you! <a href="/login">Log in</a> first!'); 
+    return res.status(403).send('No URLs for you! <a href="/login">Log in</a> first!');
   }
   let userID = req.session["user_id"];
   const templateVars = { urls: urlsForUser(userID, urlDatabase), user: users[userID] };
@@ -74,7 +74,7 @@ app.get("/urls/new", (req, res) => {
   if (!users[req.session["user_id"]]) {
     return res.redirect("/login");
   }
-  const templateVars= { user: users[req.session["user_id"]] };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
@@ -85,12 +85,12 @@ app.get("/", (req, res) => {
 
 app.get("/urls/:id", (req, res) => { // url B(R)EAD - read
   if (!users[req.session["user_id"]]) {
-    return res.status(403).send('ERROR! Not logged in. <a href="/login">Log in</a> first!'); 
+    return res.status(403).send('ERROR! Not logged in. <a href="/login">Log in</a> first!');
   }
   console.log("User ID:", req.session["user_id"]);
-  console.log("URL")
+  console.log("URL");
   if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
-    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
+    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!');
   }
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session["user_id"]]};
   res.render("urls_show", templateVars);
@@ -114,7 +114,7 @@ app.get("/login", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
-    return res.status(404).send('ERROR! This URL ID doesn\'t exist.'); 
+    return res.status(404).send('ERROR! This URL ID doesn\'t exist.');
   }
   const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
@@ -124,54 +124,54 @@ app.get("/u/:id", (req, res) => {
 // POST
 //
 
-// - URLs - 
+// - URLs -
 
 app.post("/urls", (req, res) => {  // Add URLs
   if (!users[req.session["user_id"]]) {
-    return res.status(405).send('Nope! Only logged-in users can add URLs.'); 
+    return res.status(405).send('Nope! Only logged-in users can add URLs.');
   }
   urlDatabase[generateRandomString(6)] = { longURL: addHTTP(req.body.longURL), userID: req.session["user_id"] };
-  res.redirect("urls")
+  res.redirect("urls");
 });
 
 app.post("/urls/:id/", (req, res) => { // Edit URLs
   if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
-    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
+    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!');
   }
-  console.log("Updated it!")
+  console.log("Updated it!");
   urlDatabase[req.params.id].longURL = addHTTP(req.body.longURL);
-  res.redirect("/urls/")
+  res.redirect("/urls/");
 });
 
 app.post("/urls/:id/delete", (req, res) => { // Delete URLs
   if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
-    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
+    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!');
   }
-  delete urlDatabase[req.params.id] //
-  res.redirect("/urls/")
+  delete urlDatabase[req.params.id]; //
+  res.redirect("/urls/");
 });
 
-// - USER - 
+// - USER -
 
 app.post("/register", (req, res) => { //Register a new user
   console.log("Registering new user...");
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   console.log("Password hashed.");
-  if (req.body.email === "" || req.body.password === "" ) {
-    return res.status(400).send('Uh-oh! Empty username or password!'); 
+  if (req.body.email === "" || req.body.password === "") {
+    return res.status(400).send('Uh-oh! Empty username or password!');
   }
   if (getUserByEmail(req.body.email, users)) {
-    return res.status(400).send('User with that email already exists!'); 
+    return res.status(400).send('User with that email already exists!');
   }
-  let newID = generateRandomString(8)
+  let newID = generateRandomString(8);
   users[newID] = { id: newID, email: req.body.email, password: hashedPassword};
   req.session.user_id = newID;
-  res.redirect("/urls/")
+  res.redirect("/urls/");
 });
 
 app.post("/login/", (req, res) => { // Login
-  if (req.body.email === "" || req.body.password === "" ) {
-    return res.status(403).send('Uh-oh! Empty username or password!'); 
+  if (req.body.email === "" || req.body.password === "") {
+    return res.status(403).send('Uh-oh! Empty username or password!');
   }
   let currentUser = getUserByEmail(req.body.email, users);
   if (!currentUser) {
@@ -182,14 +182,14 @@ app.post("/login/", (req, res) => { // Login
     return res.status(403).send('Incorrect password');
   }
   req.session.user_id = users[currentUser].id;
-  res.redirect("/urls/")
+  res.redirect("/urls/");
 });
 
 app.post("/logout/", (req, res) => {
   console.log("Logging out...");
   res.clearCookie("session");
   res.clearCookie("session.sig");
-  res.redirect("/urls/")
+  res.redirect("/urls/");
 });
 
 // LISTEN
