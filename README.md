@@ -12,4 +12,4 @@ That's right, if some bozo were to pretend that I, Tony Bennett, had *not* in fa
 
 To get started, install all the dependencies using the `npm install` command. We've included the appropriate stuff in package.JSON, so it should be a piece of cake.
 
-Next, run the development web server using the `node express_server.js` command. Connect to port 8080 on localhost and you'll be experiencing "The Good Life" (much like my song of the same name which hit #7 on the Billboard chart in 1963)!
+Next, run the development web server using the `node express_server.js` command. Connect to port 8080 on localhost in your web browser and you'll be experiencing "The Good Life" (much like my song of the same name which hit #7 on the Billboard chart in 1963)!
