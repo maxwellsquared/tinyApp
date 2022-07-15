@@ -24,11 +24,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
 
+// Start by putting some sample URLs here to play with.
 const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.elwooddogmeat.com/",
-    userID: "aJ48lW",
-  },
   i3BoGr: {
     longURL: "https://www.pizza.net",
     userID: "testUser",
@@ -39,17 +36,8 @@ const urlDatabase = {
   },
 };
 
+// Initialize user database with a test user
 const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
   testUser: {
     id: "testUser",
     email: "a@a.com",
@@ -58,12 +46,12 @@ const users = {
 };
 
 //
-// GET
+// GET section
 //
 
 app.get("/urls", (req, res) => { // url (B)READ - browse
-  if (!users[req.session["user_id"]]) {
-    return res.status(403).send('No URLs for you! <a href="/login">Log in</a> first!');
+  if (!users[req.session["user_id"]]) {  
+    return res.status(403).send('User not logged in! <a href="/login">Log in</a> first!');
   }
   let userID = req.session["user_id"];
   const templateVars = { urls: urlsForUser(userID, urlDatabase), user: users[userID] };
@@ -72,7 +60,7 @@ app.get("/urls", (req, res) => { // url (B)READ - browse
 
 app.get("/urls/new", (req, res) => {
   if (!users[req.session["user_id"]]) {
-    return res.redirect("/login");
+    return res.redirect("/login"); // If the user isn't logged in, make them log in
   }
   const templateVars = { user: users[req.session["user_id"]] };
   res.render("urls_new", templateVars);
@@ -85,12 +73,12 @@ app.get("/", (req, res) => {
 
 app.get("/urls/:id", (req, res) => { // url B(R)EAD - read
   if (!users[req.session["user_id"]]) {
-    return res.status(403).send('ERROR! Not logged in. <a href="/login">Log in</a> first!');
+    return res.status(403).send('User not logged in. <a href="/login">Log in</a> first!');
   }
   console.log("User ID:", req.session["user_id"]);
   console.log("URL");
   if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
-    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!');
+    return res.status(403).send('This is not the URL you\'re looking for. <a href="/login">Log in</a> first!');
   }
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session["user_id"]]};
   res.render("urls_show", templateVars);
@@ -98,7 +86,7 @@ app.get("/urls/:id", (req, res) => { // url B(R)EAD - read
 
 app.get("/register", (req, res) => {
   if (users[req.session["user_id"]]) {
-    return res.redirect('/urls');
+    return res.redirect('/urls'); // If the user is already logged in, send them to the URL index
   }
   const templateVars = { user: users[req.session["user_id"]] };
   res.render('register', templateVars);
@@ -106,7 +94,7 @@ app.get("/register", (req, res) => {
 
 app.get("/login", (req, res) => {
   if (users[req.session["user_id"]]) {
-    return res.redirect('/urls');
+    return res.redirect('/urls'); // If the user is already logged in, send them to the URL index
   }
   const templateVars = { user: users[req.session["user_id"]] };
   res.render('login', templateVars);
@@ -138,7 +126,6 @@ app.post("/urls/:id/", (req, res) => { // Edit URLs
   if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
     return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!');
   }
-  console.log("Updated it!");
   urlDatabase[req.params.id].longURL = addHTTP(req.body.longURL);
   res.redirect("/urls/");
 });
@@ -154,9 +141,7 @@ app.post("/urls/:id/delete", (req, res) => { // Delete URLs
 // - USER -
 
 app.post("/register", (req, res) => { //Register a new user
-  console.log("Registering new user...");
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);
-  console.log("Password hashed.");
   if (req.body.email === "" || req.body.password === "") {
     return res.status(400).send('Uh-oh! Empty username or password!');
   }
@@ -175,7 +160,7 @@ app.post("/login/", (req, res) => { // Login
   }
   let currentUser = getUserByEmail(req.body.email, users);
   if (!currentUser) {
-    return res.status(403).send('Oopsie woopsie! No user with that email address found.');
+    return res.status(403).send('Uh-oh! No user with that email address found.');
   }
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   if (!bcrypt.compareSync(req.body.password, hashedPassword)) {
@@ -186,7 +171,6 @@ app.post("/login/", (req, res) => { // Login
 });
 
 app.post("/logout/", (req, res) => {
-  console.log("Logging out...");
   res.clearCookie("session");
   res.clearCookie("session.sig");
   res.redirect("/urls/");
