@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieSession = require('cookie-session') // replace this!
-const bcrypt = require("bcryptjs")
+const cookieSession = require('cookie-session');
+const bcrypt = require("bcryptjs");
+const { generateRandomString, addHTTP, getUserByEmail, urlsForUser } = require("./helpers.js");
+
 
 app.use(cookieSession({
   name: 'session',
@@ -64,7 +66,7 @@ app.get("/urls", (req, res) => { // url (B)READ - browse
     return res.status(403).send('No URLs for you! <a href="/login">Log in</a> first!'); 
   }
   let userID = req.session["user_id"];
-  const templateVars = { urls: urlsForUser(userID), user: users[userID] };
+  const templateVars = { urls: urlsForUser(userID, urlDatabase), user: users[userID] };
   res.render('urls_index', templateVars);
 });
 
@@ -117,13 +119,14 @@ app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
+
 //
 // POST
 //
 
 // - URLs - 
 
-app.post("/urls", (req, res) => {  // url BRE(A)D - add
+app.post("/urls", (req, res) => {  // Add URLs
   if (!users[req.session["user_id"]]) {
     return res.status(405).send('Nope! Only logged-in users can add URLs.'); 
   }
@@ -131,7 +134,7 @@ app.post("/urls", (req, res) => {  // url BRE(A)D - add
   res.redirect("urls")
 });
 
-app.post("/urls/:id/", (req, res) => { // BR(E)AD - edit
+app.post("/urls/:id/", (req, res) => { // Edit URLs
   if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
     return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
   }
@@ -140,7 +143,7 @@ app.post("/urls/:id/", (req, res) => { // BR(E)AD - edit
   res.redirect("/urls/")
 });
 
-app.post("/urls/:id/delete", (req, res) => { // BREA(D) - delete
+app.post("/urls/:id/delete", (req, res) => { // Delete URLs
   if (urlDatabase[req.params.id].userID !== req.session["user_id"]) {
     return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
   }
@@ -150,29 +153,27 @@ app.post("/urls/:id/delete", (req, res) => { // BREA(D) - delete
 
 // - USER - 
 
-app.post("/register", (req, res) => {
+app.post("/register", (req, res) => { //Register a new user
   console.log("Registering new user...");
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   console.log("Password hashed.");
   if (req.body.email === "" || req.body.password === "" ) {
     return res.status(400).send('Uh-oh! Empty username or password!'); 
   }
-  if (getUserByEmail(req.body.email)) {
+  if (getUserByEmail(req.body.email, users)) {
     return res.status(400).send('User with that email already exists!'); 
   }
   let newID = generateRandomString(8)
-  console.log(req.body); 
   users[newID] = { id: newID, email: req.body.email, password: hashedPassword};
-  console.log(users);
   req.session.user_id = newID;
   res.redirect("/urls/")
 });
 
-app.post("/login/", (req, res) => {
+app.post("/login/", (req, res) => { // Login
   if (req.body.email === "" || req.body.password === "" ) {
     return res.status(403).send('Uh-oh! Empty username or password!'); 
   }
-  currentUser = getUserByEmail(req.body.email);
+  let currentUser = getUserByEmail(req.body.email, users);
   if (!currentUser) {
     return res.status(403).send('Oopsie woopsie! No user with that email address found.');
   }
@@ -180,7 +181,6 @@ app.post("/login/", (req, res) => {
   if (!bcrypt.compareSync(req.body.password, hashedPassword)) {
     return res.status(403).send('Incorrect password');
   }
-  console.log(`Logged in with email ${users[currentUser].email}`);
   req.session.user_id = users[currentUser].id;
   res.redirect("/urls/")
 });
@@ -197,51 +197,3 @@ app.post("/logout/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`TonyApplistening on port ${PORT}!`);
 });
-
-// FUNCTIONS
-
-function generateRandomString(strLength) {
-  let myChars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let randString = "";
-  let randChar = "";
-  for (let i = 0; i < strLength; i++) {
-    randChar = myChars[Math.floor(Math.random() * myChars.length)];
-    if (Math.random() > 0.5) {
-      randChar = randChar.toUpperCase();
-    }
-    randString += randChar
-  }
-  return randString
-}
-
-const addHTTP = function(input) {
-  if (input === undefined) return input;
-  
-  if (input.substring(0, 3) !== "http") {
-    input = "http://" + input;
-  }
-  return input;
-}
-
-const getUserByEmail = function(emailToCheck) {
-  console.log("Checking", emailToCheck);
-  for (let user in users) {
-    console.log(`Checking ${user} with address ${users[user].email}...`)
-    if (users[user].email === emailToCheck) {
-      console.log(`Found user ${user} with email ${users[user].email}`)
-      return user;
-    }
-  }
-  return false;
-}
-
-const urlsForUser = function(id) {
-  console.log("Getting URLs...")
-  toReturn = {};
-  for (let urlID in urlDatabase) {
-    if (urlDatabase[urlID].userID === id) {
-      toReturn[urlID] = urlDatabase[urlID];
-    }
-  }
-  return toReturn;
-}
