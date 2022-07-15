@@ -1,4 +1,6 @@
-# tonyApp
+# tonyApp Project
+
+TonyApp is a full stack web application built with Node and Express which allows users to shorten long URLs.
 
 ## A Word from Tony
 
