@@ -9,8 +9,18 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.elwooddogmeat.com/",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.pizza.net",
+    userID: "testUser",
+  },
+  sgq3y6: {
+    longURL: "https://www.whitehouse-decor.net",
+    userID: "testUser",
+  },
 };
 
 const users = {
@@ -30,18 +40,23 @@ const users = {
     password: "1234"
   }
 };
-
-
 //
 // GET
 //
 
 app.get("/urls", (req, res) => { // url (B)READ - browse
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  if (!users[req.cookies["user_id"]]) {
+    return res.status(403).send('No URLs for you! <a href="/login">Log in</a> first!'); 
+  }
+  let userID = req.cookies["user_id"];
+  const templateVars = { urls: urlsForUser(userID), user: users[userID] };
   res.render('urls_index', templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  if (!users[req.cookies["user_id"]]) {
+    return res.redirect("/login");
+  }
   const templateVars= { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
@@ -52,22 +67,39 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => { // url B(R)EAD - read
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: users[req.cookies["user_id"]]};
+  if (!users[req.cookies["user_id"]]) {
+    return res.status(403).send('ERROR! Not logged in. <a href="/login">Log in</a> first!'); 
+  }
+  console.log("User ID:", req.cookies["user_id"]);
+  console.log("URL")
+  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
+  }
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.cookies["user_id"]]};
   res.render("urls_show", templateVars);
 });
 
 app.get("/register", (req, res) => {
+  if (users[req.cookies["user_id"]]) {
+    return res.redirect('/urls');
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render('register', templateVars);
 });
 
 app.get("/login", (req, res) => {
+  if (users[req.cookies["user_id"]]) {
+    return res.redirect('/urls');
+  }
   const templateVars = { user: users[req.cookies["user_id"]] };
   res.render('login', templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  if (!urlDatabase[req.params.id]) {
+    return res.status(404).send('ERROR! This URL ID doesn\'t exist.'); 
+  }
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 //
@@ -77,17 +109,26 @@ app.get("/u/:id", (req, res) => {
 // - URLs - 
 
 app.post("/urls", (req, res) => {  // url BRE(A)D - add
-  urlDatabase[generateRandomString(6)] = addHTTP(req.body.longURL);
+  if (!users[req.cookies["user_id"]]) {
+    return res.status(405).send('Nope! Only logged-in users can add URLs.'); 
+  }
+  urlDatabase[generateRandomString(6)] = { longURL: addHTTP(req.body.longURL), userID: req.cookies["user_id"] };
   res.redirect("urls")
 });
 
 app.post("/urls/:id/", (req, res) => { // BR(E)AD - edit
+  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
+  }
   console.log("Updated it!")
-  urlDatabase[req.params.id] = addHTTP(req.body.longURL);
+  urlDatabase[req.params.id].longURL = addHTTP(req.body.longURL);
   res.redirect("/urls/")
 });
 
 app.post("/urls/:id/delete", (req, res) => { // BREA(D) - delete
+  if (urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+    return res.status(403).send('ERROR! Not your URL. <a href="/login">Log in</a> first!'); 
+  }
   delete urlDatabase[req.params.id] //
   res.redirect("/urls/")
 });
@@ -97,13 +138,13 @@ app.post("/urls/:id/delete", (req, res) => { // BREA(D) - delete
 app.post("/register", (req, res) => {
   console.log("Registering new user...")
   if (req.body.email === "" || req.body.password === "" ) {
-    return res.status(400).send('Uh-oh! Empty username or password!'); // make sure this is a return or you get a headers error
+    return res.status(400).send('Uh-oh! Empty username or password!'); 
   }
   if (getUserByEmail(req.body.email)) {
-    return res.status(400).send('User with that email already exists!'); // as above
+    return res.status(400).send('User with that email already exists!'); 
   }
   let newID = generateRandomString(8)
-  console.log(req.body); // Log the POST request body to the console
+  console.log(req.body); 
   users[newID] = { id: newID, email: req.body.email, password: req.body.password};
   console.log(users);
   res.cookie("user_id", newID);
@@ -111,18 +152,15 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login/", (req, res) => {
-  console.log("-----");
-  console.log("--LOGGING IN--");
-  console.log("req.body", req.body)
   if (req.body.email === "" || req.body.password === "" ) {
-    return res.status(403).send('Uh-oh! Empty username or password!'); // make sure this is a return or you get a headers error
+    return res.status(403).send('Uh-oh! Empty username or password!'); 
   }
   currentUser = getUserByEmail(req.body.email);
   if (!currentUser) {
     return res.status(403).send('Oopsie woopsie! No user with that email address found.');
   }
   if (users[currentUser] && users[currentUser].password !== req.body.password) {
-    return res.status(403).send('Incorrect password'); // make sure to change later
+    return res.status(403).send('Incorrect password'); 
   }
   console.log(`Logged in with email ${users[currentUser].email} and password ${users[currentUser].password}`);
   res.cookie("user_id", users[currentUser].id);
@@ -176,4 +214,15 @@ const getUserByEmail = function(emailToCheck) {
     }
   }
   return false;
+}
+
+const urlsForUser = function(id) {
+  console.log("Getting URLs...")
+  toReturn = {};
+  for (let urlID in urlDatabase) {
+    if (urlDatabase[urlID].userID === id) {
+      toReturn[urlID] = urlDatabase[urlID];
+    }
+  }
+  return toReturn;
 }
